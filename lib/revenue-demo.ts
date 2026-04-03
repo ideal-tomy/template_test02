@@ -1,11 +1,9 @@
-import {
-  clients,
-  getCandidateById,
-  monthlyRevenueTrend,
-} from "@/lib/demo-data";
+import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { defaultIndustryKey, type EnabledIndustryKey } from "@/lib/industry-profiles";
 
 /** ポートフォリオ加重（稼働人数ベース）の継続率・1人あたり月次粗利 */
-export function weightedPortfolioMetrics() {
+export function weightedPortfolioMetrics(industry: EnabledIndustryKey = defaultIndustryKey) {
+  const { clients } = getIndustryDemoData(industry);
   let w = 0;
   let retSum = 0;
   let marginSum = 0;
@@ -46,8 +44,8 @@ export type RevenueTrendRow = {
   prevYearManYen: number;
 };
 
-export function getRevenueTrendForChart(): RevenueTrendRow[] {
-  const t = monthlyRevenueTrend();
+export function getRevenueTrendForChart(industry: EnabledIndustryKey = defaultIndustryKey): RevenueTrendRow[] {
+  const t = getIndustryDemoData(industry).monthlyRevenueTrend();
   return t.map((row, i) => ({
     ...row,
     label: formatMonthLabel(row.month),
@@ -79,7 +77,10 @@ export type RefundRiskItem = {
 };
 
 /** 返金・保証ウィンドウの見える化（デモ。日付は固定基準日から算出） */
-export function getRefundRiskDemo(referenceDate = "2026-04-03"): RefundRiskItem[] {
+export function getRefundRiskDemo(
+  referenceDate = "2026-04-03",
+  industry: EnabledIndustryKey = defaultIndustryKey
+): RefundRiskItem[] {
   const ref = new Date(referenceDate + "T12:00:00");
   const specs: Omit<RefundRiskItem, "displayName" | "daysLeft">[] = [
     {
@@ -117,7 +118,7 @@ export function getRefundRiskDemo(referenceDate = "2026-04-03"): RefundRiskItem[
   ];
 
   return specs.map((s) => {
-    const cand = getCandidateById(s.candidateId);
+    const cand = getIndustryDemoData(industry).getCandidateById(s.candidateId);
     const end = new Date(s.guaranteeEndsOn + "T12:00:00");
     return {
       ...s,
@@ -151,7 +152,10 @@ export type BreakevenPoint = {
  * 1名あたり: 初月から月次粗利を積み上げ。年次継続率 R を月次生存率 R^(1/12) とみなす単純モデル。
  * 損益分岐＝累積粗利が CAC を初めて超える月。
  */
-export function getBreakevenSeries(months = 24): {
+export function getBreakevenSeries(
+  months = 24,
+  industry: EnabledIndustryKey = defaultIndustryKey
+): {
   points: BreakevenPoint[];
   breakevenMonth: number | null;
   cacManYen: number;
@@ -159,7 +163,7 @@ export function getBreakevenSeries(months = 24): {
   annualRetentionDecimal: number;
 } {
   const { weightedRetentionPct, avgMonthlyMarginPerHeadJpy } =
-    weightedPortfolioMetrics();
+    weightedPortfolioMetrics(industry);
   const R = Math.min(0.99, Math.max(0.5, weightedRetentionPct / 100));
   const monthlySurvival = Math.pow(R, 1 / 12);
   const cac = getCacDemo().avgCacJpy;
@@ -193,8 +197,8 @@ export function getBreakevenSeries(months = 24): {
   };
 }
 
-export function getRevenueSummaryKpis() {
-  const trend = monthlyRevenueTrend();
+export function getRevenueSummaryKpis(industry: EnabledIndustryKey = defaultIndustryKey) {
+  const trend = getIndustryDemoData(industry).monthlyRevenueTrend();
   const last = trend[trend.length - 1];
   const prev = trend[trend.length - 2];
   const momPct =
@@ -203,8 +207,8 @@ export function getRevenueSummaryKpis() {
           ((last.amountManYen - prev.amountManYen) / prev.amountManYen) * 1000
         ) / 10
       : 0;
-  const { weightedRetentionPct } = weightedPortfolioMetrics();
-  const { breakevenMonth } = getBreakevenSeries(36);
+  const { weightedRetentionPct } = weightedPortfolioMetrics(industry);
+  const { breakevenMonth } = getBreakevenSeries(36, industry);
   return {
     latestMonthLabel: formatMonthLabel(last.month),
     latestManYen: last.amountManYen,

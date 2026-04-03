@@ -5,26 +5,35 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { getIndustryProfile } from "@/lib/industry-profiles";
 import {
-  getClientById,
-  getMatchesForClient,
-} from "@/lib/demo-data";
+  getIndustryFromSearchParams,
+  withIndustryQuery,
+} from "@/lib/industry-selection";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default async function ClientDetailPage({ params }: Props) {
+export default async function ClientDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
-  const client = getClientById(id);
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const industry = getIndustryFromSearchParams(resolvedSearchParams);
+  const profile = getIndustryProfile(industry);
+  const data = getIndustryDemoData(industry);
+  const client = data.getClientById(id);
   if (!client) notFound();
 
-  const matches = getMatchesForClient(client.id);
+  const matches = data.getMatchesForClient(client.id);
 
   return (
     <div className="space-y-6">
       <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1">
-        <Link href="/clients">
+        <Link href={withIndustryQuery("/clients", industry)}>
           <ArrowLeft className="size-4" />
-          クライアント一覧
+          {profile.labels.client}一覧
         </Link>
       </Button>
 
@@ -118,7 +127,7 @@ export default async function ClientDetailPage({ params }: Props) {
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Link
-                    href={`/candidates/${candidate.id}`}
+                    href={withIndustryQuery(`/candidates/${candidate.id}`, industry)}
                     className="font-semibold text-primary hover:underline"
                   >
                     {i + 1}. {candidate.displayName}

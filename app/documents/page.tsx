@@ -9,12 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { candidates, countDocumentAlerts } from "@/lib/demo-data";
+import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { getIndustryProfile } from "@/lib/industry-profiles";
+import { useIndustry } from "@/components/industry-context";
+import { withIndustryQuery } from "@/lib/industry-selection";
 
 export default function DocumentsPage() {
+  const { industry } = useIndustry();
+  const profile = getIndustryProfile(industry);
+  const data = getIndustryDemoData(industry);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const alerts = countDocumentAlerts();
+  const alerts = data.countDocumentAlerts();
 
   function runScan() {
     setOpen(true);
@@ -26,12 +32,16 @@ export default function DocumentsPage() {
     }, 1000);
   }
 
-  const blocked = candidates.filter((c) => c.pipelineStatus === "document_blocked");
+  const blocked = data.candidates.filter(
+    (c) => c.pipelineStatus === "document_blocked"
+  );
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-primary-alt">書類管理</h1>
+        <h1 className="text-2xl font-semibold text-primary-alt">
+          {profile.labels.documents}管理
+        </h1>
         <p className="mt-1 text-sm text-muted">
           ステータスサマリーと OCR デモ（API なし）
         </p>
@@ -43,7 +53,9 @@ export default function DocumentsPage() {
           パスポート OCR（デモ）
         </Button>
         <Button variant="secondary" asChild>
-          <Link href="/candidates?view=pipeline">書類トラブル候補を見る</Link>
+          <Link href={withIndustryQuery("/candidates?view=pipeline", industry)}>
+            書類トラブル候補を見る
+          </Link>
         </Button>
       </div>
 
@@ -95,7 +107,7 @@ export default function DocumentsPage() {
             {blocked.map((c) => (
               <Link
                 key={c.id}
-                href={`/candidates/${c.id}`}
+                href={withIndustryQuery(`/candidates/${c.id}`, industry)}
                 className="block rounded-lg border border-border p-3 text-sm hover:bg-surface"
               >
                 <span className="font-medium">{c.displayName}</span>

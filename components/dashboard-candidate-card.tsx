@@ -13,24 +13,31 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import type { EnabledIndustryKey } from "@/lib/industry-profiles";
+import { getIndustryProfile } from "@/lib/industry-profiles";
+import { withIndustryQuery } from "@/lib/industry-selection";
 
 type Props = {
+  industry: EnabledIndustryKey;
   totalCount: number;
   n3OrAbove: number;
   top5: Candidate[];
 };
 
 export function DashboardCandidateCard({
+  industry,
   totalCount,
   n3OrAbove,
   top5,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const profile = getIndustryProfile(industry);
+  const candidateHref = withIndustryQuery("/candidates", industry);
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col">
       <Link
-        href="/candidates"
+        href={candidateHref}
         className="group block h-full min-h-0 md:hidden"
       >
         <Card className="flex h-full min-h-0 items-start gap-1.5 border-border p-2 shadow-sm transition-all group-hover:border-primary/30 group-hover:shadow-md">
@@ -40,10 +47,10 @@ export function DashboardCandidateCard({
           />
           <div className="min-w-0 flex-1">
             <p className="line-clamp-2 text-[10px] font-semibold leading-tight text-foreground">
-              候補者
+              {profile.labels.candidate}
             </p>
             <p className="mt-0.5 line-clamp-2 text-[9px] leading-snug text-muted">
-              {totalCount}名登録
+              {totalCount}{profile.kpiLabels.totalCountUnit}
             </p>
           </div>
         </Card>
@@ -53,7 +60,7 @@ export function DashboardCandidateCard({
         <CardHeader className="flex flex-row items-start justify-between space-y-0 p-5 pb-2">
           <CardTitle className="flex items-center gap-2 text-base font-semibold">
             <Users className="size-5 shrink-0 text-primary" />
-            候補者
+            {profile.labels.candidate}
           </CardTitle>
           <Badge variant="ai" className="shrink-0 px-2 text-xs">
             <Sparkles className="mr-1 size-3" />
@@ -63,10 +70,12 @@ export function DashboardCandidateCard({
         <CardContent className="flex flex-1 flex-col gap-4 p-5 pt-0">
           <div className="text-3xl font-bold tabular-nums">
             {totalCount}
-            <span className="ml-2 text-sm font-normal text-muted">名登録</span>
+            <span className="ml-2 text-sm font-normal text-muted">
+              {profile.kpiLabels.totalCountUnit}
+            </span>
           </div>
           <p className="text-sm text-muted">
-            日本語 N3 以上:{" "}
+            {profile.kpiLabels.proficiencyLabel}:{" "}
             <span className="font-semibold text-foreground">{n3OrAbove} 名</span>
           </p>
 
@@ -95,7 +104,7 @@ export function DashboardCandidateCard({
                 {top5.map((c) => (
                   <li key={c.id}>
                     <Link
-                      href={`/candidates/${c.id}`}
+                      href={withIndustryQuery(`/candidates/${c.id}`, industry)}
                       onClick={(e) => e.stopPropagation()}
                       className="flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-background/80"
                     >
@@ -121,7 +130,7 @@ export function DashboardCandidateCard({
           </Collapsible>
 
           <Link
-            href="/candidates"
+            href={candidateHref}
             className="mt-auto inline-flex items-center gap-1 pt-2 text-sm font-medium text-primary"
           >
             一覧へ <ArrowRight className="size-4" />

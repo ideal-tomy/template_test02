@@ -1,3 +1,10 @@
+import {
+  defaultIndustryKey,
+  getIndustryProfile,
+} from "@/lib/industry-profiles";
+
+const defaultProfile = getIndustryProfile(defaultIndustryKey);
+
 /**
  * アプリ全体の「テンプレート設定」— 別デモ・別業種に差し替える主入口。
  * 派遣デモの文言・ナビはここを編集するか、別ファイルにコピーして import を差し替える。
@@ -26,20 +33,19 @@ export type TemplateNavItem = {
 
 export const appTemplateConfig = {
   branding: {
-    productName: "派遣コックピット",
+    productName: defaultProfile.productName,
     /** ヘッダー横バッジ。不要なら null */
-    badgeLabel: "AI デモ" as string | null,
+    badgeLabel: defaultProfile.badgeLabel as string | null,
     metadata: {
-      title: "派遣コックピット（営業デモ）",
-      description: "AI 搭載型業務管理ダッシュボード デモ",
+      title: defaultProfile.metadataTitle,
+      description: defaultProfile.metadataDescription,
     },
   },
 
   /** トップダッシュ（/）のコピー */
   dashboard: {
-    pageTitle: "ダッシュボード",
-    pageSubtitle:
-      "管理を便利に、判断をAIで — デモデータで全体像をご覧ください。",
+    pageTitle: defaultProfile.dashboardTitle,
+    pageSubtitle: defaultProfile.dashboardSubtitle,
     /**
      * メインカード群の列数（PC 想定）。3 = 従来の 3×2＋拡張行、4 = 1行4枚を優先。
      */

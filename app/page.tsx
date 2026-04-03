@@ -15,20 +15,16 @@ import { DashboardCandidateCard } from "@/components/dashboard-candidate-card";
 import { DashboardMobileCardSlim } from "@/components/dashboard-mobile-card-slim";
 import { TemplateDashboardHeader } from "@/components/templates/layout-primitives";
 import {
-  appTemplateConfig,
   dashboardExtensionSpanClass,
   dashboardGridClass,
+  appTemplateConfig,
 } from "@/lib/app-template-config";
+import { getIndustryProfile } from "@/lib/industry-profiles";
 import {
-  candidates,
-  clients,
-  countDocumentAlerts,
-  countN3OrAbove,
-  getPipelineCounts,
-  getTopCandidatesByAiScore,
-  monthlyRevenueTrend,
-  totalOpenSlots,
-} from "@/lib/demo-data";
+  getIndustryFromSearchParams,
+  withIndustryQuery,
+} from "@/lib/industry-selection";
+import { getIndustryDemoData } from "@/lib/demo-data-selector";
 
 const pipelineOrder = [
   "interview_coordination",
@@ -40,58 +36,58 @@ const pipelineOrder = [
   "document_blocked",
 ] as const;
 
-const pipelineLabels: Record<(typeof pipelineOrder)[number], string> = {
-  interview_coordination: "面接調整",
-  offer_accepted: "内定",
-  visa_applying: "ビザ申請",
-  awaiting_entry: "入国待ち",
-  training: "講習",
-  document_prep: "書類準備",
-  document_blocked: "書類不備",
+type PageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function DashboardPage() {
-  const pipeline = getPipelineCounts();
+export default async function DashboardPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const industry = getIndustryFromSearchParams(resolvedSearchParams);
+  const profile = getIndustryProfile(industry);
+  const data = getIndustryDemoData(industry);
+
+  const pipeline = data.getPipelineCounts();
   const totalPipeline = Object.values(pipeline).reduce((a, b) => a + b, 0);
-  const top5 = getTopCandidatesByAiScore(5);
-  const trend = monthlyRevenueTrend();
+  const top5 = data.getTopCandidatesByAiScore(5);
+  const trend = data.monthlyRevenueTrend();
   const lastRev = trend[trend.length - 1]?.amountManYen ?? 0;
-  const docAlerts = countDocumentAlerts();
+  const docAlerts = data.countDocumentAlerts();
   const { dashboard } = appTemplateConfig;
   const gridCols = dashboard.gridColumns;
 
   return (
     <div className="space-y-6 sm:space-y-8">
       <TemplateDashboardHeader
-        title={dashboard.pageTitle}
-        subtitle={dashboard.pageSubtitle}
+        title={profile.dashboardTitle || dashboard.pageTitle}
+        subtitle={profile.dashboardSubtitle || dashboard.pageSubtitle}
       />
 
       <div className={dashboardGridClass(gridCols)}>
         <div className="flex h-full min-h-0 min-w-0 flex-col">
           <DashboardCandidateCard
-            totalCount={candidates.length}
-            n3OrAbove={countN3OrAbove()}
+            industry={industry}
+            totalCount={data.candidates.length}
+            n3OrAbove={data.countN3OrAbove()}
             top5={top5}
           />
         </div>
 
         <div className="flex h-full min-h-0 min-w-0 flex-col">
           <DashboardMobileCardSlim
-            href="/candidates?view=pipeline"
+            href={withIndustryQuery("/candidates?view=pipeline", industry)}
             icon={GitBranch}
-            title="選考・ビザ進捗"
+            title={profile.labels.pipeline}
             subtitle={`要フォロー（書類）：${docAlerts}件`}
           />
           <Link
-            href="/candidates?view=pipeline"
+            href={withIndustryQuery("/candidates?view=pipeline", industry)}
             className="group hidden min-h-0 w-full flex-1 flex-col md:flex"
           >
             <Card className="flex h-full min-h-0 flex-1 flex-col transition-all group-hover:border-primary/30 group-hover:shadow-md">
               <CardHeader className="shrink-0 p-5 pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <GitBranch className="size-5 shrink-0 text-primary" />
-                  <span className="leading-tight">選考・ビザ進捗</span>
+                  <span className="leading-tight">{profile.labels.pipeline}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex min-h-0 flex-1 flex-col gap-4 p-5 pt-0">
@@ -106,7 +102,7 @@ export default function DashboardPage() {
                           key={key}
                           className="bg-primary/80 first:rounded-l-full last:rounded-r-full"
                           style={{ width: `${w}%` }}
-                          title={`${pipelineLabels[key]}: ${n}`}
+                          title={`${profile.statusLabels[key]}: ${n}`}
                         />
                       );
                     })}
@@ -114,7 +110,7 @@ export default function DashboardPage() {
                   <ul className="grid min-h-0 flex-1 grid-cols-2 content-start gap-x-2 gap-y-1 text-xs leading-tight text-muted">
                     {pipelineOrder.map((key) => (
                       <li key={key} className="flex justify-between gap-1">
-                        <span className="truncate">{pipelineLabels[key]}</span>
+                        <span className="truncate">{profile.statusLabels[key]}</span>
                         <span className="shrink-0 font-semibold tabular-nums text-foreground">
                           {pipeline[key]}
                         </span>
@@ -137,36 +133,36 @@ export default function DashboardPage() {
 
         <div className="flex h-full min-h-0 min-w-0 flex-col">
           <DashboardMobileCardSlim
-            href="/clients"
+            href={withIndustryQuery("/clients", industry)}
             icon={Building2}
-            title="クライアント"
-            subtitle={`${clients.length}社`}
+            title={profile.labels.client}
+            subtitle={`${data.clients.length}社`}
           />
           <Link
-            href="/clients"
+            href={withIndustryQuery("/clients", industry)}
             className="group hidden min-h-0 w-full flex-1 flex-col md:flex"
           >
             <Card className="flex h-full min-h-0 flex-1 flex-col transition-all group-hover:border-primary/30 group-hover:shadow-md">
               <CardHeader className="shrink-0 p-5 pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <Building2 className="size-5 shrink-0 text-primary" />
-                  クライアント
+                  {profile.labels.client}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex min-h-0 flex-1 flex-col gap-3 p-5 pt-0">
                 <div className="flex min-h-0 flex-1 flex-col gap-3">
                   <div className="text-3xl font-bold tabular-nums">
-                    {clients.length}
+                    {data.clients.length}
                     <span className="ml-2 text-sm font-normal text-muted">社</span>
                   </div>
                   <p className="text-sm text-muted">
-                    欠員枠 合計:{" "}
+                    {profile.kpiLabels.openSlotsLabel}:{" "}
                     <span className="font-semibold text-warning">
-                      {totalOpenSlots()} 名分
+                      {data.totalOpenSlots()} {profile.kpiLabels.openSlotsUnit}
                     </span>
                   </p>
                   <ul className="min-h-0 flex-1 space-y-1 text-xs text-muted">
-                    {clients.slice(0, 3).map((c) => (
+                    {data.clients.slice(0, 3).map((c) => (
                       <li key={c.id} className="truncate leading-tight">
                         {c.tradeNameJa} — 空き {c.operations.openSlots}
                       </li>
@@ -183,20 +179,20 @@ export default function DashboardPage() {
 
         <div className="flex h-full min-h-0 min-w-0 flex-col">
           <DashboardMobileCardSlim
-            href="/matching"
+            href={withIndustryQuery("/matching", industry)}
             icon={ClipboardList}
-            title="マッチング"
+            title={profile.labels.matching}
             subtitle="AI生成候補"
           />
           <Link
-            href="/matching"
+            href={withIndustryQuery("/matching", industry)}
             className="group hidden min-h-0 w-full flex-1 flex-col md:flex"
           >
             <Card className="flex h-full min-h-0 flex-1 flex-col transition-all group-hover:border-primary/30 group-hover:shadow-md">
               <CardHeader className="flex shrink-0 flex-row items-start justify-between space-y-0 p-5 pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <ClipboardList className="size-5 shrink-0 text-primary" />
-                  マッチング
+                  {profile.labels.matching}
                 </CardTitle>
                 <Badge variant="ai" className="shrink-0 text-xs">
                   AI
@@ -221,20 +217,20 @@ export default function DashboardPage() {
 
         <div className="flex h-full min-h-0 min-w-0 flex-col">
           <DashboardMobileCardSlim
-            href="/documents"
+            href={withIndustryQuery("/documents", industry)}
             icon={FileText}
-            title="書類作成"
+            title={profile.labels.documents}
             subtitle="画像で書類作成"
           />
           <Link
-            href="/documents"
+            href={withIndustryQuery("/documents", industry)}
             className="group hidden min-h-0 w-full flex-1 flex-col md:flex"
           >
             <Card className="flex h-full min-h-0 flex-1 flex-col transition-all group-hover:border-primary/30 group-hover:shadow-md">
               <CardHeader className="flex shrink-0 flex-row items-start justify-between space-y-0 p-5 pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <FileText className="size-5 shrink-0 text-primary" />
-                  書類
+                  {profile.labels.documents}
                 </CardTitle>
                 <Badge variant="ai" className="shrink-0 text-xs">
                   OCR
@@ -261,20 +257,20 @@ export default function DashboardPage() {
 
         <div className="flex h-full min-h-0 min-w-0 flex-col">
           <DashboardMobileCardSlim
-            href="/revenue"
+            href={withIndustryQuery("/revenue", industry)}
             icon={TrendingUp}
-            title="収益"
+            title={profile.labels.revenue}
             subtitle="売上推移"
           />
           <Link
-            href="/revenue"
+            href={withIndustryQuery("/revenue", industry)}
             className="group hidden min-h-0 w-full flex-1 flex-col md:flex"
           >
             <Card className="flex h-full min-h-0 flex-1 flex-col transition-all group-hover:border-primary/30 group-hover:shadow-md">
               <CardHeader className="flex shrink-0 flex-row items-start justify-between space-y-0 p-5 pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <TrendingUp className="size-5 shrink-0 text-primary" />
-                  収益
+                  {profile.labels.revenue}
                 </CardTitle>
                 <Badge variant="ai" className="shrink-0 text-xs">
                   LTV
@@ -305,13 +301,13 @@ export default function DashboardPage() {
             className={`${dashboardExtensionSpanClass("attendance", gridCols)} flex h-full min-h-0 min-w-0 flex-col`}
           >
             <DashboardMobileCardSlim
-              href="/operations"
+            href={withIndustryQuery("/operations", industry)}
               icon={Clock}
               title="勤怠・請求"
               subtitle="勤怠情報から経費計算連携"
             />
             <Link
-              href="/operations"
+              href={withIndustryQuery("/operations", industry)}
               className="group hidden min-h-0 w-full flex-1 flex-col md:flex"
             >
               <Card className="flex h-full min-h-0 flex-1 flex-col border-dashed transition-all group-hover:border-primary/40 group-hover:shadow-md">
@@ -338,13 +334,13 @@ export default function DashboardPage() {
             className={`${dashboardExtensionSpanClass("knowledge", gridCols)} flex h-full min-h-0 min-w-0 flex-col`}
           >
             <DashboardMobileCardSlim
-              href="/knowledge"
+            href={withIndustryQuery("/knowledge", industry)}
               icon={Sparkles}
               title="社内ナレッジ"
               subtitle="社内情報管理と共有"
             />
             <Link
-              href="/knowledge"
+              href={withIndustryQuery("/knowledge", industry)}
               className="group hidden min-h-0 w-full flex-1 flex-col md:flex"
             >
               <Card className="flex h-full min-h-0 flex-1 flex-col border-dashed transition-all group-hover:border-primary/40 group-hover:shadow-md">

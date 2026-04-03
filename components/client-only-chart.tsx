@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /** Recharts の SSR で幅高さが取れない問題を避けるため、クライアントマウント後に子を描画 */
@@ -11,10 +10,7 @@ export function ClientOnlyChart({
   className?: string;
   children: React.ReactNode;
 }) {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    setReady(true);
-  }, []);
+  const ready = typeof window !== "undefined";
   if (!ready) {
     return (
       <div

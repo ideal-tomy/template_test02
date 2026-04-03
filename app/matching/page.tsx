@@ -2,26 +2,42 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { clients, getMatchesForClient } from "@/lib/demo-data";
+import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { getIndustryProfile } from "@/lib/industry-profiles";
+import {
+  getIndustryFromSearchParams,
+  withIndustryQuery,
+} from "@/lib/industry-selection";
 
-export default function MatchingPage() {
+type PageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function MatchingPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const industry = getIndustryFromSearchParams(resolvedSearchParams);
+  const profile = getIndustryProfile(industry);
+  const data = getIndustryDemoData(industry);
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-primary-alt">マッチング</h1>
+        <h1 className="text-2xl font-semibold text-primary-alt">
+          {profile.labels.matching}
+        </h1>
         <p className="mt-1 text-sm text-muted">
-          案件ごとの上位候補と AI 理由（デモロジック）
+          {profile.matchingDescription}
         </p>
       </div>
       <div className="space-y-8">
-        {clients.map((cl) => {
-          const top = getMatchesForClient(cl.id).slice(0, 3);
+        {data.clients.map((cl) => {
+          const top = data.getMatchesForClient(cl.id).slice(0, 3);
           return (
             <Card key={cl.id}>
               <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
                 <CardTitle className="text-lg">
                   <Link
-                    href={`/clients/${cl.id}`}
+                    href={withIndustryQuery(`/clients/${cl.id}`, industry)}
                     className="hover:text-primary hover:underline"
                   >
                     {cl.tradeNameJa}
@@ -41,7 +57,10 @@ export default function MatchingPage() {
                     >
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <Link
-                          href={`/candidates/${candidate.id}`}
+                          href={withIndustryQuery(
+                            `/candidates/${candidate.id}`,
+                            industry
+                          )}
                           className="font-medium text-primary"
                         >
                           {candidate.displayName}

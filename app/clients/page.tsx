@@ -2,18 +2,38 @@ import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { clients } from "@/lib/demo-data";
+import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { getIndustryProfile } from "@/lib/industry-profiles";
+import {
+  getIndustryFromSearchParams,
+  withIndustryQuery,
+} from "@/lib/industry-selection";
 
-export default function ClientsPage() {
+type PageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function ClientsPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const industry = getIndustryFromSearchParams(resolvedSearchParams);
+  const profile = getIndustryProfile(industry);
+  const clients = getIndustryDemoData(industry).clients;
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-primary-alt">案件・クライアント</h1>
-        <p className="mt-1 text-sm text-muted">派遣先 {clients.length} 社（デモ）</p>
+        <h1 className="text-2xl font-semibold text-primary-alt">
+          {profile.labels.client}
+        </h1>
+        <p className="mt-1 text-sm text-muted">{clients.length} 件（デモ）</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {clients.map((c) => (
-          <Link key={c.id} href={`/clients/${c.id}`} className="group block">
+          <Link
+            key={c.id}
+            href={withIndustryQuery(`/clients/${c.id}`, industry)}
+            className="group block"
+          >
             <Card className="h-full transition-all group-hover:border-primary/30">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-start gap-2 text-base">

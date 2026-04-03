@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -13,7 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { candidates, getPipelineCounts } from "@/lib/demo-data";
+import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { getIndustryProfile } from "@/lib/industry-profiles";
+import { getIndustryFromSearchParams, withIndustryQuery } from "@/lib/industry-selection";
 import { cn } from "@/lib/utils";
 
 const jlptOptions: JlptLevel[] = ["N5", "N4", "N3", "N2", "N1"];
@@ -50,56 +52,46 @@ export function CandidatesSection() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [preview, setPreview] = useState<Candidate | null>(null);
   const isMobile = useMobile();
+  const industry = getIndustryFromSearchParams(searchParams);
+  const profile = getIndustryProfile(industry);
+  const data = getIndustryDemoData(industry);
+  const candidates = data.candidates;
 
-  useEffect(() => {
-    setTab(view === "pipeline" ? "pipeline" : "list");
-  }, [view]);
+  const pipeline = data.getPipelineCounts();
 
-  const pipeline = getPipelineCounts();
-
-  const pipelineLabelJa: Record<Candidate["pipelineStatus"], string> = {
-    awaiting_entry: "入国待ち",
-    interview_coordination: "面接調整",
-    training: "講習中",
-    offer_accepted: "内定済",
-    visa_applying: "ビザ申請中",
-    document_blocked: "書類不備",
-    document_prep: "書類準備中",
-  };
-
-  const filtered = useMemo(() => {
-    const t = q.trim().toLowerCase();
-    return candidates.filter((c) => {
-      const jlptOk = jlpt === "all" || c.jlpt === jlpt;
-      if (!jlptOk) return false;
-      if (!t) return true;
-      const hay = [
-        c.displayName,
-        c.legalNameFull,
-        c.backgroundSummary,
-        ...c.skillTags,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(t);
-    });
-  }, [q, jlpt]);
+  const t = q.trim().toLowerCase();
+  const filtered = candidates.filter((c) => {
+    const jlptOk = jlpt === "all" || c.jlpt === jlpt;
+    if (!jlptOk) return false;
+    if (!t) return true;
+    const hay = [
+      c.displayName,
+      c.legalNameFull,
+      c.backgroundSummary,
+      ...c.skillTags,
+    ]
+      .join(" ")
+      .toLowerCase();
+    return hay.includes(t);
+  });
 
   function openCandidate(c: Candidate) {
     if (isMobile) {
       setPreview(c);
       setSheetOpen(true);
     } else {
-      router.push(`/candidates/${c.id}`);
+      router.push(withIndustryQuery(`/candidates/${c.id}`, industry));
     }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-primary-alt">候補者</h1>
+        <h1 className="text-2xl font-semibold text-primary-alt">
+          {profile.labels.candidate}
+        </h1>
         <p className="mt-1 text-sm text-muted">
-          {candidates.length} 名のデモデータ — スマホはタップでクイック表示
+          {candidates.length} 件のデモデータ — スマホはタップでクイック表示
         </p>
       </div>
 
@@ -124,7 +116,7 @@ export function CandidatesSection() {
             ).map(([key, n]) => (
               <Card key={key}>
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted">{pipelineLabelJa[key]}</p>
+                  <p className="text-xs text-muted">{profile.statusLabels[key]}</p>
                   <p className="text-2xl font-bold tabular-nums">{n}</p>
                 </CardContent>
               </Card>
@@ -137,7 +129,7 @@ export function CandidatesSection() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
               <Input
-                placeholder="氏名・スキル・軍経験 などで検索"
+                placeholder="名称・タグ・キーワードで検索"
                 className="pl-9"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -199,7 +191,7 @@ export function CandidatesSection() {
       </Tabs>
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent title="候補者サマリー">
+        <SheetContent title={`${profile.labels.candidate}サマリー`}>
           {preview && (
             <div className="space-y-4">
               <div className="flex gap-3">
@@ -219,7 +211,9 @@ export function CandidatesSection() {
               <p className="text-sm">{preview.backgroundSummary}</p>
               <Separator />
               <Button asChild className="w-full">
-                <Link href={`/candidates/${preview.id}`}>詳しく見る</Link>
+                <Link href={withIndustryQuery(`/candidates/${preview.id}`, industry)}>
+                  詳しく見る
+                </Link>
               </Button>
             </div>
           )}

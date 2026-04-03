@@ -24,6 +24,11 @@ import {
   TemplateTwoColumnGrid,
 } from "@/components/templates/layout-primitives";
 import { getCacDemo, getBreakevenSeries, getReferralRecoveryDemo, getRefundRiskDemo, getRevenueSummaryKpis, getRevenueTrendForChart } from "@/lib/revenue-demo";
+import { getIndustryProfile } from "@/lib/industry-profiles";
+import {
+  getIndustryFromSearchParams,
+  withIndustryQuery,
+} from "@/lib/industry-selection";
 
 function formatManYen(n: number) {
   return `${n.toLocaleString("ja-JP")} 万円`;
@@ -33,13 +38,20 @@ function formatYen(n: number) {
   return `${n.toLocaleString("ja-JP")} 円`;
 }
 
-export default function RevenuePage() {
-  const trend = getRevenueTrendForChart();
-  const kpis = getRevenueSummaryKpis();
+type PageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function RevenuePage({ searchParams }: PageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const industry = getIndustryFromSearchParams(resolvedSearchParams);
+  const profile = getIndustryProfile(industry);
+  const trend = getRevenueTrendForChart(industry);
+  const kpis = getRevenueSummaryKpis(industry);
   const cac = getCacDemo();
   const recovery = getReferralRecoveryDemo();
-  const refundItems = getRefundRiskDemo();
-  const be = getBreakevenSeries(24);
+  const refundItems = getRefundRiskDemo("2026-04-03", industry);
+  const be = getBreakevenSeries(24, industry);
 
   const collectedPct = Math.round(
     (recovery.collectedManYen / recovery.billedManYen) * 100
@@ -48,7 +60,7 @@ export default function RevenuePage() {
   return (
     <TemplatePageStack>
       <TemplatePageHeader
-        title="収益・LTV"
+        title={profile.labels.revenue}
         description="月次売上・紹介料回収・返金リスク・CAC・損益分岐のデモダッシュボード（数値はダミー／クライアント加重は実データ連動）"
       />
 
@@ -224,7 +236,7 @@ export default function RevenuePage() {
                   <tr key={r.candidateId} className="border-b border-border/80">
                     <td className="py-2.5 pr-3 align-top">
                       <Link
-                        href={`/candidates/${r.candidateId}`}
+                        href={withIndustryQuery(`/candidates/${r.candidateId}`, industry)}
                         className="font-medium text-primary underline-offset-2 hover:underline"
                       >
                         {r.displayName}
@@ -264,8 +276,11 @@ export default function RevenuePage() {
             </table>
             <p className="mt-3 text-xs text-muted">
               詳細は{" "}
-              <Link href="/candidates" className="text-primary underline">
-                候補者
+              <Link
+                href={withIndustryQuery("/candidates", industry)}
+                className="text-primary underline"
+              >
+                {profile.labels.candidate}
               </Link>{" "}
               の書類・パイプラインと連携想定。
             </p>

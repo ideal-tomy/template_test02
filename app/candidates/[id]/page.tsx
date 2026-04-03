@@ -6,28 +6,43 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getCandidateById, getClientById, scoreCandidateForClient } from "@/lib/demo-data";
+import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { getIndustryProfile } from "@/lib/industry-profiles";
+import {
+  getIndustryFromSearchParams,
+  withIndustryQuery,
+} from "@/lib/industry-selection";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default async function CandidateDetailPage({ params }: Props) {
+export default async function CandidateDetailPage({
+  params,
+  searchParams,
+}: Props) {
   const { id } = await params;
-  const c = getCandidateById(id);
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const industry = getIndustryFromSearchParams(resolvedSearchParams);
+  const profile = getIndustryProfile(industry);
+  const data = getIndustryDemoData(industry);
+  const c = data.getCandidateById(id);
   if (!c) notFound();
 
   const assigned = c.plannedAssignment
-    ? getClientById(c.plannedAssignment.clientId)
+    ? data.getClientById(c.plannedAssignment.clientId)
     : undefined;
   const match = assigned
-    ? scoreCandidateForClient(c, assigned)
+    ? data.scoreCandidateForClient(c, assigned)
     : null;
 
   return (
     <div className="space-y-6">
       <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1">
-        <Link href="/candidates">
+        <Link href={withIndustryQuery("/candidates", industry)}>
           <ArrowLeft className="size-4" />
-          候補者一覧
+          {profile.labels.candidate}一覧
         </Link>
       </Button>
 
