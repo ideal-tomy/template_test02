@@ -9,14 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { getIndustryDemoData } from "@/lib/demo-data-selector";
-import { getIndustryProfile } from "@/lib/industry-profiles";
+import { TemplatePageHeader, TemplatePageStack } from "@/components/templates/layout-primitives";
 import { useIndustry } from "@/components/industry-context";
+import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { getIndustryPageHints } from "@/lib/industry-page-hints";
+import { getIndustryProfile } from "@/lib/industry-profiles";
 import { withIndustryQuery } from "@/lib/industry-selection";
 
 export default function DocumentsPage() {
   const { industry } = useIndustry();
   const profile = getIndustryProfile(industry);
+  const hints = getIndustryPageHints(industry);
+  const docHints = hints.documents;
   const data = getIndustryDemoData(industry);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,24 +41,20 @@ export default function DocumentsPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-primary-alt">
-          {profile.labels.documents}管理
-        </h1>
-        <p className="mt-1 text-sm text-muted">
-          ステータスサマリーと OCR デモ（API なし）
-        </p>
-      </div>
+    <TemplatePageStack>
+      <TemplatePageHeader
+        title={`${profile.labels.documents}管理`}
+        description={docHints.pageSubtitle}
+      />
 
       <div className="flex flex-wrap gap-3">
-        <Button onClick={runScan} className="gap-2">
+        <Button onClick={runScan} className="gap-2 min-h-11">
           <ScanLine className="size-4" />
-          パスポート OCR（デモ）
+          {docHints.ocrButtonLabel}
         </Button>
-        <Button variant="secondary" asChild>
+        <Button variant="secondary" asChild className="min-h-11">
           <Link href={withIndustryQuery("/candidates?view=pipeline", industry)}>
-            書類トラブル候補を見る
+            {profile.statusLabels.document_blocked}の{profile.labels.candidate}を見る
           </Link>
         </Button>
       </div>
@@ -65,7 +65,7 @@ export default function DocumentsPage() {
             <CardTitle className="text-sm font-medium text-muted">生成完了</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">12</p>
+            <p className="text-2xl font-bold tabular-nums">{docHints.kpiComplete}</p>
             <Badge variant="success" className="mt-2">
               デモ値
             </Badge>
@@ -76,9 +76,9 @@ export default function DocumentsPage() {
             <CardTitle className="text-sm font-medium text-muted">要確認</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">3</p>
+            <p className="text-2xl font-bold tabular-nums">{docHints.kpiReview}</p>
             <Badge variant="warning" className="mt-2">
-              翻訳・校正
+              レビュー待ち
             </Badge>
           </CardContent>
         </Card>
@@ -87,9 +87,9 @@ export default function DocumentsPage() {
             <CardTitle className="text-sm font-medium text-muted">要フォロー</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-danger">{alerts}</p>
+            <p className="text-2xl font-bold tabular-nums text-danger">{alerts}</p>
             <Badge variant="danger" className="mt-2">
-              書類系ステータス
+              パイプライン連動
             </Badge>
           </CardContent>
         </Card>
@@ -100,7 +100,7 @@ export default function DocumentsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <FileText className="size-5" />
-              書類不備の候補
+              {profile.statusLabels.document_blocked}の{profile.labels.candidate}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -108,7 +108,7 @@ export default function DocumentsPage() {
               <Link
                 key={c.id}
                 href={withIndustryQuery(`/candidates/${c.id}`, industry)}
-                className="block rounded-lg border border-border p-3 text-sm hover:bg-surface"
+                className="block min-h-[52px] rounded-lg border border-border p-3 text-sm hover:bg-surface"
               >
                 <span className="font-medium">{c.displayName}</span>
                 {c.documentAlertJa && (
@@ -120,11 +120,14 @@ export default function DocumentsPage() {
         </Card>
       )}
 
-      <Sheet open={open} onOpenChange={(o) => {
-        setOpen(o);
-        if (!o) setLoading(false);
-      }}>
-        <SheetContent title="OCR 結果">
+      <Sheet
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setLoading(false);
+        }}
+      >
+        <SheetContent title={docHints.sheetTitle}>
           {loading ? (
             <div className="space-y-3 py-4">
               <Skeleton className="h-4 w-full" />
@@ -133,16 +136,16 @@ export default function DocumentsPage() {
             </div>
           ) : (
             <div className="space-y-2 text-sm">
-              <p className="font-semibold">サンプル: Nuwan Kumara</p>
+              <p className="font-semibold">{docHints.ocrSampleName}</p>
               <ul className="list-inside list-disc text-muted">
-                <li>氏名: Pathirana Gamage Nuwan Kumara</li>
-                <li>生年月日: 1998-04-15</li>
-                <li>パスポート: N1234567 / 2030-05-10</li>
+                {docHints.ocrSampleLines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
               </ul>
             </div>
           )}
         </SheetContent>
       </Sheet>
-    </div>
+    </TemplatePageStack>
   );
 }

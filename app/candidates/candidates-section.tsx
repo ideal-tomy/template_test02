@@ -13,24 +13,15 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { TemplatePageHeader } from "@/components/templates/layout-primitives";
+import { useMobile } from "@/hooks/use-mobile";
 import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { getIndustryPageHints } from "@/lib/industry-page-hints";
 import { getIndustryProfile } from "@/lib/industry-profiles";
 import { getIndustryFromSearchParams, withIndustryQuery } from "@/lib/industry-selection";
 import { cn } from "@/lib/utils";
 
 const jlptOptions: JlptLevel[] = ["N5", "N4", "N3", "N2", "N1"];
-
-function useMobile(breakpoint = 768) {
-  const [mobile, setMobile] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-    const fn = () => setMobile(mq.matches);
-    fn();
-    mq.addEventListener("change", fn);
-    return () => mq.removeEventListener("change", fn);
-  }, [breakpoint]);
-  return mobile;
-}
 
 function statusBadgeVariant(
   s: Candidate["pipelineStatus"]
@@ -45,15 +36,25 @@ export function CandidatesSection() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const view = searchParams.get("view");
-  const defaultTab = view === "pipeline" ? "pipeline" : "list";
-  const [tab, setTab] = useState(defaultTab);
+  const industry = getIndustryFromSearchParams(searchParams);
+  const pageHints = getIndustryPageHints(industry);
+  const resolvedDefaultTab =
+    view === "pipeline"
+      ? "pipeline"
+      : view === "list"
+        ? "list"
+        : pageHints.candidates.defaultTab;
+  const [tab, setTab] = useState(resolvedDefaultTab);
   const [q, setQ] = useState("");
   const [jlpt, setJlpt] = useState<JlptLevel | "all">("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [preview, setPreview] = useState<Candidate | null>(null);
   const isMobile = useMobile();
-  const industry = getIndustryFromSearchParams(searchParams);
   const profile = getIndustryProfile(industry);
+
+  useEffect(() => {
+    setTab(resolvedDefaultTab);
+  }, [resolvedDefaultTab]);
   const data = getIndustryDemoData(industry);
   const candidates = data.candidates;
 
@@ -84,25 +85,88 @@ export function CandidatesSection() {
     }
   }
 
+  function sheetBody(preview: Candidate) {
+    const order = pageHints.candidates.sheetOrder;
+    const statusBlock = (
+      <div className="flex flex-wrap gap-2">
+        <Badge variant="ai">AI {preview.aiScore}</Badge>
+        <Badge variant={statusBadgeVariant(preview.pipelineStatus)}>
+          {preview.pipelineStatusLabelJa}
+        </Badge>
+      </div>
+    );
+    const alertBlock =
+      preview.documentAlertJa != null && preview.documentAlertJa !== "" ? (
+        <p className="text-sm font-medium text-danger">{preview.documentAlertJa}</p>
+      ) : null;
+    const metaBlock = (
+      <p className="text-sm text-muted">
+        {preview.nationality} · {preview.jlpt}
+      </p>
+    );
+    const summaryBlock = (
+      <p className="text-sm leading-relaxed">{preview.backgroundSummary}</p>
+    );
+
+    return (
+      <>
+        <div className="flex gap-3">
+          <Image
+            src={preview.photoUrl}
+            alt=""
+            width={64}
+            height={64}
+            className="rounded-full bg-surface"
+            unoptimized
+          />
+          <div className="min-w-0">
+            <p className="text-lg font-semibold">{preview.displayName}</p>
+            {order === "alertFirst" ? (
+              <>
+                {alertBlock}
+                {metaBlock}
+                {statusBlock}
+                {summaryBlock}
+              </>
+            ) : (
+              <>
+                {metaBlock}
+                {statusBlock}
+                {alertBlock}
+                {summaryBlock}
+              </>
+            )}
+          </div>
+        </div>
+        <Separator />
+        <Button asChild className="w-full">
+          <Link href={withIndustryQuery(`/candidates/${preview.id}`, industry)}>
+            詳しく見る
+          </Link>
+        </Button>
+      </>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-primary-alt">
-          {profile.labels.candidate}
-        </h1>
-        <p className="mt-1 text-sm text-muted">
-          {candidates.length} 件のデモデータ — スマホはタップでクイック表示
-        </p>
-      </div>
+      <TemplatePageHeader
+        title={profile.labels.candidate}
+        description={`${candidates.length} 件のデモデータ。${pageHints.candidates.pageSubtitle} スマホはタップでクイック表示。`}
+      />
 
-      <Tabs value={tab} onValueChange={setTab} className="w-full">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => setTab(v as "list" | "pipeline")}
+        className="w-full"
+      >
         <TabsList className="w-full max-w-md">
           <TabsTrigger value="list" className="flex-1">
             一覧
           </TabsTrigger>
           <TabsTrigger value="pipeline" className="flex-1">
             <GitBranch className="mr-1 size-4" />
-            パイプライン
+            <span className="truncate">{profile.labels.pipeline}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -158,7 +222,7 @@ export function CandidatesSection() {
                 type="button"
                 onClick={() => openCandidate(c)}
                 className={cn(
-                  "text-left transition-all hover:shadow-md rounded-xl border border-border bg-card p-4",
+                  "min-h-[52px] text-left transition-all hover:shadow-md rounded-xl border border-border bg-card p-4",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                 )}
               >
@@ -192,31 +256,7 @@ export function CandidatesSection() {
 
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent title={`${profile.labels.candidate}サマリー`}>
-          {preview && (
-            <div className="space-y-4">
-              <div className="flex gap-3">
-                <Image
-                  src={preview.photoUrl}
-                  alt=""
-                  width={64}
-                  height={64}
-                  className="rounded-full bg-surface"
-                  unoptimized
-                />
-                <div>
-                  <p className="text-lg font-semibold">{preview.displayName}</p>
-                  <p className="text-sm text-muted">{preview.jlpt}</p>
-                </div>
-              </div>
-              <p className="text-sm">{preview.backgroundSummary}</p>
-              <Separator />
-              <Button asChild className="w-full">
-                <Link href={withIndustryQuery(`/candidates/${preview.id}`, industry)}>
-                  詳しく見る
-                </Link>
-              </Button>
-            </div>
-          )}
+          {preview && <div className="space-y-4">{sheetBody(preview)}</div>}
         </SheetContent>
       </Sheet>
     </div>

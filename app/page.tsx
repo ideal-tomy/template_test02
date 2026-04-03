@@ -19,6 +19,7 @@ import {
   dashboardGridClass,
   appTemplateConfig,
 } from "@/lib/app-template-config";
+import { getIndustryPageHints } from "@/lib/industry-page-hints";
 import { getIndustryProfile } from "@/lib/industry-profiles";
 import {
   getIndustryFromSearchParams,
@@ -44,6 +45,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const industry = getIndustryFromSearchParams(resolvedSearchParams);
   const profile = getIndustryProfile(industry);
+  const homeHints = getIndustryPageHints(industry).home;
+  const docKpi = getIndustryPageHints(industry).documents;
   const data = getIndustryDemoData(industry);
 
   const pipeline = data.getPipelineCounts();
@@ -182,7 +185,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             href={withIndustryQuery("/matching", industry)}
             icon={ClipboardList}
             title={profile.labels.matching}
-            subtitle="AI生成候補"
+            subtitle={homeHints.matchingMobileSubtitle}
           />
           <Link
             href={withIndustryQuery("/matching", industry)}
@@ -201,10 +204,10 @@ export default async function DashboardPage({ searchParams }: PageProps) {
               <CardContent className="flex min-h-0 flex-1 flex-col gap-3 p-5 pt-0 text-sm">
                 <div className="flex min-h-0 flex-1 flex-col gap-3">
                   <p className="leading-snug text-muted">
-                    丸福惣菜 × Nuwan など、案件別の推奨候補を表示します。
+                    {homeHints.matchingDesktopTeaser}
                   </p>
                   <div className="rounded-lg bg-surface p-3 text-xs leading-relaxed text-foreground">
-                    「規律重視の現場には軍・警察経験者が適合」— 3行理由つき（デモ）
+                    {homeHints.matchingDesktopReason}
                   </div>
                 </div>
                 <span className="mt-auto inline-flex shrink-0 items-center gap-1 pt-1 text-sm font-medium text-primary">
@@ -220,7 +223,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
             href={withIndustryQuery("/documents", industry)}
             icon={FileText}
             title={profile.labels.documents}
-            subtitle="画像で書類作成"
+            subtitle={homeHints.documentsMobileSubtitle}
           />
           <Link
             href={withIndustryQuery("/documents", industry)}
@@ -242,8 +245,8 @@ export default async function DashboardPage({ searchParams }: PageProps) {
                     生成・翻訳ステータス（デモ） / 右下 FAB で OCR 擬似体験
                   </p>
                   <div className="flex flex-wrap gap-2 text-xs">
-                    <Badge variant="success">完了 12</Badge>
-                    <Badge variant="warning">要確認 3</Badge>
+                    <Badge variant="success">完了 {docKpi.kpiComplete}</Badge>
+                    <Badge variant="warning">要確認 {docKpi.kpiReview}</Badge>
                     <Badge variant="danger">不備 {docAlerts}</Badge>
                   </div>
                 </div>

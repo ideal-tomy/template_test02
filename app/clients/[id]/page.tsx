@@ -5,7 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  TemplatePageHeader,
+  TemplatePageStack,
+} from "@/components/templates/layout-primitives";
 import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { getIndustryPageHints, quickLinkHref } from "@/lib/industry-page-hints";
 import { getIndustryProfile } from "@/lib/industry-profiles";
 import {
   getIndustryFromSearchParams,
@@ -27,24 +32,31 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
   if (!client) notFound();
 
   const matches = data.getMatchesForClient(client.id);
+  const quickLinks = getIndustryPageHints(industry).clientDetail.quickLinks;
 
   return (
-    <div className="space-y-6">
-      <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1">
+    <TemplatePageStack>
+      <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1 self-start">
         <Link href={withIndustryQuery("/clients", industry)}>
           <ArrowLeft className="size-4" />
           {profile.labels.client}一覧
         </Link>
       </Button>
 
-      <div>
-        <h1 className="text-2xl font-semibold text-primary-alt">
-          {client.legalNameJa}
-        </h1>
-        <p className="mt-1 text-sm text-muted">
-          {client.industryJa} · {client.prefectureJa}
-          {client.cityJa}
-        </p>
+      <TemplatePageHeader
+        title={client.legalNameJa}
+        description={`${client.industryJa} · ${client.prefectureJa}${
+          client.cityJa ? ` ${client.cityJa}` : ""
+        }`}
+      />
+
+      <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-surface/50 p-3">
+        <span className="w-full text-xs font-medium text-muted">次の操作</span>
+        {quickLinks.map((q) => (
+          <Button key={q.path} variant="secondary" size="sm" asChild>
+            <Link href={quickLinkHref(q.path, industry)}>{q.label}</Link>
+          </Button>
+        ))}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -142,6 +154,6 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
           </ul>
         </CardContent>
       </Card>
-    </div>
+    </TemplatePageStack>
   );
 }
