@@ -25,6 +25,7 @@ import {
 } from "@/components/templates/layout-primitives";
 import { getCacDemo, getBreakevenSeries, getReferralRecoveryDemo, getRefundRiskDemo, getRevenueSummaryKpis, getRevenueTrendForChart } from "@/lib/revenue-demo";
 import { getIndustryProfile } from "@/lib/industry-profiles";
+import { getIndustryAccentHex } from "@/lib/industry-theme";
 import {
   getIndustryFromSearchParams,
   withIndustryQuery,
@@ -45,6 +46,7 @@ type PageProps = {
 export default async function RevenuePage({ searchParams }: PageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const industry = getIndustryFromSearchParams(resolvedSearchParams);
+  const accentHex = getIndustryAccentHex(industry);
   const profile = getIndustryProfile(industry);
   const trend = getRevenueTrendForChart(industry);
   const kpis = getRevenueSummaryKpis(industry);
@@ -156,7 +158,7 @@ export default async function RevenuePage({ searchParams }: PageProps) {
         </CardHeader>
         <CardContent>
           <ClientOnlyChart className="h-[280px] min-h-[240px]">
-            <RevenueMonthlyChart data={trend} />
+            <RevenueMonthlyChart data={trend} accentHex={accentHex} />
           </ClientOnlyChart>
         </CardContent>
       </Card>
@@ -298,7 +300,7 @@ export default async function RevenuePage({ searchParams }: PageProps) {
           </CardHeader>
           <CardContent>
             <ClientOnlyChart className="h-[220px] min-h-[200px]">
-              <RevenueCacBreakdownChart rows={cac.breakdown} />
+              <RevenueCacBreakdownChart rows={cac.breakdown} accentHex={accentHex} />
             </ClientOnlyChart>
             <ul className="mt-2 space-y-1.5 border-t border-border pt-3 text-xs text-muted">
               {cac.breakdown.map((row) => (
@@ -330,6 +332,7 @@ export default async function RevenuePage({ searchParams }: PageProps) {
                 cacManYen={be.cacManYen}
                 avgMarginManYen={be.avgMarginManYen}
                 annualRetentionDecimal={be.annualRetentionDecimal}
+                accentHex={accentHex}
               />
             </ClientOnlyChart>
           </CardContent>

@@ -84,7 +84,7 @@ export function DashboardCandidateCard({
               type="button"
               className={cn(
                 "flex w-full items-center justify-between gap-1 rounded-lg border-2 border-primary/35 px-3 py-2.5 text-left shadow-sm transition-colors",
-                "bg-gradient-to-br from-primary/12 via-primary/6 to-sky-500/10",
+                "bg-gradient-to-br from-primary/12 via-primary/6 to-primary/10",
                 "hover:from-primary/18 hover:border-primary/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
               )}

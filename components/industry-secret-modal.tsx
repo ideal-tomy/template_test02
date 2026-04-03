@@ -11,6 +11,8 @@ import {
   industryOptionLabelJa,
   type EnabledIndustryKey,
 } from "@/lib/industry-profiles";
+import { getIndustryAccentHex } from "@/lib/industry-theme";
+import { cn } from "@/lib/utils";
 
 const DEMO_PIN = "1234";
 
@@ -71,22 +73,29 @@ export function IndustrySecretModal({ open, onOpenChange }: Props) {
             </form>
           ) : (
             <div className="space-y-3">
-              <label className="block text-sm font-medium">
-                業種
-                <select
-                  className="mt-1 flex h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
-                  value={selected}
-                  onChange={(e) =>
-                    setSelected(e.target.value as EnabledIndustryKey)
-                  }
-                >
-                  {enabledIndustryKeys.map((key) => (
-                    <option key={key} value={key}>
-                      {industryOptionLabelJa[key]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <span className="block text-sm font-medium">業種</span>
+              <div className="max-h-[min(320px,50vh)] space-y-1.5 overflow-y-auto pr-0.5">
+                {enabledIndustryKeys.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSelected(key)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                      selected === key
+                        ? "border-primary bg-primary/5 font-medium"
+                        : "border-border hover:bg-surface/80"
+                    )}
+                  >
+                    <span
+                      className="size-3 shrink-0 rounded-full border border-border/80"
+                      style={{ backgroundColor: getIndustryAccentHex(key) }}
+                      aria-hidden
+                    />
+                    {industryOptionLabelJa[key]}
+                  </button>
+                ))}
+              </div>
               <Button type="button" className="w-full" onClick={applyIndustry}>
                 この業種に切り替え
               </Button>

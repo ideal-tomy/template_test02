@@ -121,6 +121,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="w-10 shrink-0" aria-hidden />
           )}
         </div>
+        <div className="h-0.5 w-full bg-primary" aria-hidden />
       </header>
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-24 pt-6 md:pb-8">

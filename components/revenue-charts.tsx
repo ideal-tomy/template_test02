@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import {
   Area,
   Bar,
@@ -16,15 +17,17 @@ import {
   YAxis,
 } from "recharts";
 import type { BreakevenPoint, RevenueTrendRow } from "@/lib/revenue-demo";
+import { getAccentBarShades } from "@/lib/industry-theme";
 
-const PRIMARY = "#2563eb";
 const MUTED = "#94a3b8";
 const SUCCESS = "#10b981";
 const DANGER = "#ef4444";
 
-type MonthlyProps = { data: RevenueTrendRow[] };
+type MonthlyProps = { data: RevenueTrendRow[]; accentHex: string };
 
-export function RevenueMonthlyChart({ data }: MonthlyProps) {
+export function RevenueMonthlyChart({ data, accentHex }: MonthlyProps) {
+  const gid = useId().replace(/:/g, "");
+  const fillId = `revFill-${gid}`;
   return (
     <div className="h-[280px] w-full min-h-[240px] min-w-0">
       <ResponsiveContainer width="100%" height="100%">
@@ -33,9 +36,9 @@ export function RevenueMonthlyChart({ data }: MonthlyProps) {
           margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
         >
           <defs>
-            <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={PRIMARY} stopOpacity={0.35} />
-              <stop offset="100%" stopColor={PRIMARY} stopOpacity={0.02} />
+            <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={accentHex} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={accentHex} stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
@@ -92,9 +95,9 @@ export function RevenueMonthlyChart({ data }: MonthlyProps) {
             type="monotone"
             dataKey="amountManYen"
             name="amountManYen"
-            stroke={PRIMARY}
+            stroke={accentHex}
             strokeWidth={2}
-            fill="url(#revFill)"
+            fill={`url(#${fillId})`}
           />
           <Line
             type="monotone"
@@ -118,6 +121,7 @@ type BreakevenProps = {
   avgMarginManYen: number;
   /** 0〜1（年次継続率） */
   annualRetentionDecimal: number;
+  accentHex: string;
 };
 
 export function RevenueBreakevenChart({
@@ -126,6 +130,7 @@ export function RevenueBreakevenChart({
   cacManYen,
   avgMarginManYen,
   annualRetentionDecimal,
+  accentHex,
 }: BreakevenProps) {
   const chartData = points.map((p) => ({
     ...p,
@@ -216,7 +221,7 @@ export function RevenueBreakevenChart({
             type="monotone"
             dataKey="cumulativeManYen"
             name="cumulativeManYen"
-            stroke={PRIMARY}
+            stroke={accentHex}
             strokeWidth={2}
             dot={false}
           />
@@ -260,11 +265,18 @@ export function RevenueBreakevenChart({
 
 type CacRow = { label: string; jpy: number; pct: number };
 
-export function RevenueCacBreakdownChart({ rows }: { rows: CacRow[] }) {
+export function RevenueCacBreakdownChart({
+  rows,
+  accentHex,
+}: {
+  rows: CacRow[];
+  accentHex: string;
+}) {
   const data = rows.map((r) => ({
     ...r,
     manYen: Math.round(r.jpy / 10_000),
   }));
+  const barShades = getAccentBarShades(accentHex);
 
   return (
     <div className="h-[220px] w-full min-h-[200px] min-w-0">
@@ -309,17 +321,7 @@ export function RevenueCacBreakdownChart({ rows }: { rows: CacRow[] }) {
             {data.map((_, i) => (
               <Cell
                 key={i}
-                fill={
-                  i === 0
-                    ? PRIMARY
-                    : i === 1
-                      ? "#3b82f6"
-                      : i === 2
-                        ? "#60a5fa"
-                        : i === 3
-                          ? "#93c5fd"
-                          : "#bfdbfe"
-                }
+                fill={barShades[Math.min(i, barShades.length - 1)]!}
               />
             ))}
           </Bar>

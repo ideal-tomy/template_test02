@@ -15,6 +15,7 @@ import {
   type EnabledIndustryKey,
 } from "@/lib/industry-profiles";
 import { getIndustryFromSearchParams } from "@/lib/industry-selection";
+import { getIndustryAccentHex } from "@/lib/industry-theme";
 import { readStoredIndustry, writeStoredIndustry } from "@/lib/industry-storage";
 
 type IndustryContextValue = {
@@ -41,6 +42,12 @@ export function IndustryProvider({ children }: { children: ReactNode }) {
     () => getIndustryFromSearchParams(searchParams),
     [searchParams]
   );
+
+  /** 業種に応じて --primary を同期（Tailwind の text-primary / bg-primary と連動） */
+  useEffect(() => {
+    const hex = getIndustryAccentHex(industry);
+    document.documentElement.style.setProperty("--primary", hex);
+  }, [industry]);
 
   /** URL に industry が無いとき、localStorage を URL に反映（サーバーと一致させる） */
   useEffect(() => {
