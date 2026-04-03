@@ -1,3 +1,7 @@
+import type {
+  DashboardExtensionOverride,
+  DashboardExtensionSlotId,
+} from "@/lib/dashboard-extension-types";
 import type { EnabledIndustryKey } from "@/lib/industry-profiles";
 import { withIndustryQuery } from "@/lib/industry-selection";
 
@@ -7,6 +11,30 @@ export type QuickLinkPath =
   | "pipeline"
   | "revenue"
   | "candidates";
+
+/** `/candidates/[id]` のタブ名・カード文言（派遣テンプレの直書きを業種ごとに差し替え） */
+export type CandidateDetailHints = {
+  tabBasic: string;
+  tabDocs: string;
+  tabHistory: string;
+  tabAi: string;
+  profileCardTitle: string;
+  docsCardTitle: string;
+  docsPrimaryLabel: string;
+  docsSecondaryLabel: string;
+  docsExpiryLabel: string;
+  docsOcrNote: string;
+  historyCardTitle: string;
+  historyPlaceholder: string;
+  plannedAssignmentSalaryLabel: string;
+  aiCardTitle: string;
+  /** 紐付けなし時の本文（リンクはページ側で追加） */
+  aiEmptyAssignment: string;
+  aiMatchingLinkLabel: string;
+  aiFooterNote: string;
+  /** ヘッダーに JLPT バッジを出す（営業・不動産などでは非表示） */
+  showJlptBadge: boolean;
+};
 
 export type IndustryPageHints = {
   candidates: {
@@ -50,6 +78,11 @@ export type IndustryPageHints = {
   clientDetail: {
     quickLinks: { label: string; path: QuickLinkPath }[];
   };
+  candidateDetail: CandidateDetailHints;
+  /** ダッシュ拡張枠の文言・パス・非表示（未指定は app-template-config の既定） */
+  dashboardExtensionOverrides?: Partial<
+    Record<DashboardExtensionSlotId, DashboardExtensionOverride>
+  >;
 };
 
 const hints: Record<EnabledIndustryKey, IndustryPageHints> = {
@@ -118,6 +151,30 @@ const hints: Record<EnabledIndustryKey, IndustryPageHints> = {
         { label: "パイプライン", path: "pipeline" },
       ],
     },
+    candidateDetail: {
+      tabBasic: "基本情報",
+      tabDocs: "書類",
+      tabHistory: "派遣履歴・評価",
+      tabAi: "AI 分析",
+      profileCardTitle: "プロフィール",
+      docsCardTitle: "書類・在留",
+      docsPrimaryLabel: "パスポート",
+      docsSecondaryLabel: "COE",
+      docsExpiryLabel: "有効期限",
+      docsOcrNote:
+        "OCR デモ: ダッシュボード右下 FAB からサンプル抽出を表示できます。",
+      historyCardTitle: "派遣履歴・評価（デモ）",
+      historyPlaceholder:
+        "本番では placements テーブルから表示。デモでは未配属または予定のみ表示します。",
+      plannedAssignmentSalaryLabel: "月給",
+      aiCardTitle: "AI マッチング示唆",
+      aiEmptyAssignment:
+        "配属予定クライアントが未設定です。案件別の提案は次のリンクから確認できます。",
+      aiMatchingLinkLabel: "マッチング一覧を開く",
+      aiFooterNote:
+        "動画レジュメ解析・離職リスクは本番 AI 連携で拡張予定（デモは静的テキスト）。",
+      showJlptBadge: true,
+    },
   },
   "real-estate": {
     candidates: {
@@ -180,6 +237,30 @@ const hints: Record<EnabledIndustryKey, IndustryPageHints> = {
         { label: "顧客提案", path: "matching" },
         { label: "内見・契約進捗", path: "pipeline" },
       ],
+    },
+    candidateDetail: {
+      tabBasic: "顧客概要",
+      tabDocs: "契約書類",
+      tabHistory: "内見・提案履歴",
+      tabAi: "AI 分析",
+      profileCardTitle: "顧客プロフィール",
+      docsCardTitle: "本人確認・契約準備",
+      docsPrimaryLabel: "本人確認番号（デモ）",
+      docsSecondaryLabel: "契約・ローン準備ステータス",
+      docsExpiryLabel: "書類有効期限",
+      docsOcrNote:
+        "重要事項・身分証の OCR は「契約書類管理」とダッシュボード右下 FAB から（デモ）。",
+      historyCardTitle: "内見・提案履歴（デモ）",
+      historyPlaceholder:
+        "本番では内見ログ・提案メモを時系列表示。デモでは成約見込み案件の予定のみ表示します。",
+      plannedAssignmentSalaryLabel: "成約想定（価格イメージ）",
+      aiCardTitle: "AI 物件提案示唆",
+      aiEmptyAssignment:
+        "メイン物件案件が未紐付けです。顧客別の提案は次のリンクから確認できます。",
+      aiMatchingLinkLabel: "物件提案を見る",
+      aiFooterNote:
+        "需要予測・競合物件サマリは本番 AI 連携で拡張予定（デモは静的テキスト）。",
+      showJlptBadge: false,
     },
   },
   professional: {
@@ -244,6 +325,30 @@ const hints: Record<EnabledIndustryKey, IndustryPageHints> = {
         { label: "相談パイプライン", path: "pipeline" },
       ],
     },
+    candidateDetail: {
+      tabBasic: "案件概要",
+      tabDocs: "申請・証憑",
+      tabHistory: "受任・手続履歴",
+      tabAi: "AI 分析",
+      profileCardTitle: "相談内容・プロフィール",
+      docsCardTitle: "申請書・証憑一覧（デモ）",
+      docsPrimaryLabel: "案件参照番号（デモ）",
+      docsSecondaryLabel: "申請・審査ステータス",
+      docsExpiryLabel: "期限日（デモ）",
+      docsOcrNote:
+        "領収書・契約書の OCR は「申請書類」とダッシュボード右下 FAB から（デモ）。",
+      historyCardTitle: "受任・手続履歴（デモ）",
+      historyPlaceholder:
+        "本番では受任・申請タスクを時系列表示。デモでは顧問先との予定のみ表示します。",
+      plannedAssignmentSalaryLabel: "報酬見込み（月額イメージ）",
+      aiCardTitle: "AI 案件優先度示唆",
+      aiEmptyAssignment:
+        "主担当顧問先が未設定です。顧問先別の優先案件は次のリンクから確認できます。",
+      aiMatchingLinkLabel: "案件優先度を見る",
+      aiFooterNote:
+        "判例要約・条文チェックは本番 AI 連携で拡張予定（デモは静的テキスト）。",
+      showJlptBadge: false,
+    },
   },
   construction: {
     candidates: {
@@ -307,6 +412,40 @@ const hints: Record<EnabledIndustryKey, IndustryPageHints> = {
         { label: "手配進捗", path: "pipeline" },
       ],
     },
+    candidateDetail: {
+      tabBasic: "基本情報",
+      tabDocs: "安全・入場書類",
+      tabHistory: "現場実績・評価",
+      tabAi: "AI 分析",
+      profileCardTitle: "作業員プロフィール",
+      docsCardTitle: "資格・保険・入場（デモ）",
+      docsPrimaryLabel: "資格証番号（デモ）",
+      docsSecondaryLabel: "入場・安全ステータス",
+      docsExpiryLabel: "資格・保険期限",
+      docsOcrNote:
+        "安全書類の OCR は「書類管理」とダッシュボード右下 FAB から（デモ）。",
+      historyCardTitle: "現場実績・評価（デモ）",
+      historyPlaceholder:
+        "本番では現場配属・安全教育履歴を表示。デモでは次現場の予定のみ表示します。",
+      plannedAssignmentSalaryLabel: "現場手当（想定）",
+      aiCardTitle: "AI 配員示唆",
+      aiEmptyAssignment:
+        "次の現場案件が未設定です。現場別の配員候補は次のリンクから確認できます。",
+      aiMatchingLinkLabel: "配員最適化を見る",
+      aiFooterNote:
+        "ヒヤリハット要約・安全教育アラートは本番 AI 連携で拡張予定（デモは静的テキスト）。",
+      showJlptBadge: true,
+    },
+    dashboardExtensionOverrides: {
+      fieldReports: {
+        title: "現場報告・写真",
+        subtitle: "未提出と確認場所を一元化（デモ）",
+        desktopTitle: "現場報告・写真ハブ（拡張枠）",
+        desktopBody:
+          "現場からの写真・日報をタスク単位で集約。送り忘れ・ファイル探索・取り違えを減らす想定です。アップロード時の自動命名・保存先ルールにも連携可能。",
+        desktopCta: "報告一覧へ",
+      },
+    },
   },
   medical: {
     candidates: {
@@ -369,6 +508,30 @@ const hints: Record<EnabledIndustryKey, IndustryPageHints> = {
         { label: "配置提案", path: "matching" },
         { label: "配置進捗", path: "pipeline" },
       ],
+    },
+    candidateDetail: {
+      tabBasic: "基本情報",
+      tabDocs: "記録・同意",
+      tabHistory: "配置・勤務履歴",
+      tabAi: "AI 分析",
+      profileCardTitle: "スタッフプロフィール",
+      docsCardTitle: "記録・同意（デモ）",
+      docsPrimaryLabel: "職員ID（デモ）",
+      docsSecondaryLabel: "記録・研修ステータス",
+      docsExpiryLabel: "資格・講習期限",
+      docsOcrNote:
+        "同意書・記録の OCR は「記録書類」とダッシュボード右下 FAB から（デモ）。",
+      historyCardTitle: "配置・勤務履歴（デモ）",
+      historyPlaceholder:
+        "本番ではシフト・配置履歴を表示。デモでは次勤務予定のみ表示します。",
+      plannedAssignmentSalaryLabel: "時給・単価（想定）",
+      aiCardTitle: "AI 配置示唆",
+      aiEmptyAssignment:
+        "優先配置先が未設定です。拠点別の候補は次のリンクから確認できます。",
+      aiMatchingLinkLabel: "配置提案を見る",
+      aiFooterNote:
+        "記録不備検知・シフト最適化は本番 AI 連携で拡張予定（デモは静的テキスト）。",
+      showJlptBadge: true,
     },
   },
   sales: {
@@ -434,6 +597,30 @@ const hints: Record<EnabledIndustryKey, IndustryPageHints> = {
         { label: "売上見込み", path: "revenue" },
       ],
     },
+    candidateDetail: {
+      tabBasic: "基本情報",
+      tabDocs: "提案資料",
+      tabHistory: "商談・案件履歴",
+      tabAi: "AI 分析",
+      profileCardTitle: "リード情報",
+      docsCardTitle: "提案・法務チェック（デモ）",
+      docsPrimaryLabel: "社内リードID",
+      docsSecondaryLabel: "提案・見積ステータス",
+      docsExpiryLabel: "次回フォロー期限（デモ）",
+      docsOcrNote:
+        "見積・注文書の OCR は「提案資料管理」とダッシュボード右下 FAB から（デモ）。",
+      historyCardTitle: "商談・案件履歴（デモ）",
+      historyPlaceholder:
+        "本番では商談アクティビティを時系列表示。デモではメイン案件の予定のみ表示します。",
+      plannedAssignmentSalaryLabel: "受注目標（想定粗利／月）",
+      aiCardTitle: "AI 提案示唆",
+      aiEmptyAssignment:
+        "メイン商談の紐付けが未設定です。商談別の優先度は次のリンクから確認できます。",
+      aiMatchingLinkLabel: "提案優先度を見る",
+      aiFooterNote:
+        "メール要約・競合ウォッチは本番 AI 連携で拡張予定（デモは静的テキスト）。",
+      showJlptBadge: false,
+    },
   },
   logistics: {
     candidates: {
@@ -497,6 +684,30 @@ const hints: Record<EnabledIndustryKey, IndustryPageHints> = {
         { label: "配車進捗", path: "pipeline" },
       ],
     },
+    candidateDetail: {
+      tabBasic: "基本情報",
+      tabDocs: "作業・免許書類",
+      tabHistory: "配車・稼働履歴",
+      tabAi: "AI 分析",
+      profileCardTitle: "作業員プロフィール",
+      docsCardTitle: "免許・作業票（デモ）",
+      docsPrimaryLabel: "免許・資格番号（デモ）",
+      docsSecondaryLabel: "配車・入構ステータス",
+      docsExpiryLabel: "免許・点検期限",
+      docsOcrNote:
+        "ドライバー証票の OCR は「作業書類」とダッシュボード右下 FAB から（デモ）。",
+      historyCardTitle: "配車・稼働履歴（デモ）",
+      historyPlaceholder:
+        "本番では便・倉庫別の実績を表示。デモでは次便の予定のみ表示します。",
+      plannedAssignmentSalaryLabel: "便単価（想定）",
+      aiCardTitle: "AI 配置・配車示唆",
+      aiEmptyAssignment:
+        "担当便・案件が未設定です。案件別の候補は次のリンクから確認できます。",
+      aiMatchingLinkLabel: "配置最適化を見る",
+      aiFooterNote:
+        "遅延予測・荷量予測は本番 AI 連携で拡張予定（デモは静的テキスト）。",
+      showJlptBadge: true,
+    },
   },
   education: {
     candidates: {
@@ -559,6 +770,30 @@ const hints: Record<EnabledIndustryKey, IndustryPageHints> = {
         { label: "受講提案", path: "matching" },
         { label: "受講進捗", path: "pipeline" },
       ],
+    },
+    candidateDetail: {
+      tabBasic: "基本情報",
+      tabDocs: "提出物・教材",
+      tabHistory: "受講・評価履歴",
+      tabAi: "AI 分析",
+      profileCardTitle: "受講者プロフィール",
+      docsCardTitle: "提出・進捗（デモ）",
+      docsPrimaryLabel: "受講者ID（デモ）",
+      docsSecondaryLabel: "課題・修了ステータス",
+      docsExpiryLabel: "提出期限（デモ）",
+      docsOcrNote:
+        "課題レポートの OCR は「提出書類」とダッシュボード右下 FAB から（デモ）。",
+      historyCardTitle: "受講・評価履歴（デモ）",
+      historyPlaceholder:
+        "本番では受講ログ・テスト結果を表示。デモでは受講中講座の予定のみ表示します。",
+      plannedAssignmentSalaryLabel: "受講料（想定）",
+      aiCardTitle: "AI 学習示唆",
+      aiEmptyAssignment:
+        "推奨講座が未設定です。講座別の提案は次のリンクから確認できます。",
+      aiMatchingLinkLabel: "受講提案を見る",
+      aiFooterNote:
+        "学習脱落予測・教材推薦は本番 AI 連携で拡張予定（デモは静的テキスト）。",
+      showJlptBadge: true,
     },
   },
 };

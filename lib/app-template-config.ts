@@ -2,6 +2,7 @@ import {
   defaultIndustryKey,
   getIndustryProfile,
 } from "@/lib/industry-profiles";
+import type { DashboardExtensionSlotBase } from "@/lib/dashboard-extension-types";
 
 const defaultProfile = getIndustryProfile(defaultIndustryKey);
 
@@ -50,11 +51,60 @@ export const appTemplateConfig = {
      * メインカード群の列数（PC 想定）。3 = 従来の 3×2＋拡張行、4 = 1行4枚を優先。
      */
     gridColumns: 3 as 3 | 4,
-    /** 拡張枠カードの表示（勤怠・請求 / 社内ナレッジ） */
-    extensionCards: {
-      attendanceBilling: true,
-      knowledgeAi: true,
-    },
+    /**
+     * 拡張枠（下段フル幅内で 2×2 / 4 列）。enabled で個別に消せる。
+     * 業種別の文言差し替えは `industry-page-hints` の `dashboardExtensionOverrides`。
+     */
+    extensionSlots: [
+      {
+        id: "attendanceBilling",
+        enabled: true,
+        path: "/operations",
+        icon: "Clock",
+        title: "勤怠・請求",
+        subtitle: "勤怠情報から経費計算連携",
+        desktopTitle: "勤怠・請求（拡張枠）",
+        desktopBody:
+          "CSV 取込イメージ。今回はプレースホルダ — 実務・収益ハブへ",
+        desktopCta: "開く",
+      },
+      {
+        id: "knowledgeAi",
+        enabled: true,
+        path: "/knowledge",
+        icon: "Sparkles",
+        title: "社内ナレッジ",
+        subtitle: "社内情報管理と共有",
+        desktopTitle: "社内ナレッジ AI（拡張枠）",
+        desktopBody:
+          "入管トラブル FAQ をチャットで — デモでは概要のみ表示",
+        desktopCta: "ナレッジへ",
+      },
+      {
+        id: "fieldReports",
+        enabled: true,
+        path: "/field-reports",
+        icon: "Camera",
+        title: "データ登録・報告",
+        subtitle: "テンプレで追加可能な枠（デモ）",
+        desktopTitle: "報告・登録ハブ（拡張枠）",
+        desktopBody:
+          "現場や支店からの報告・写真を一元化する想定のプレースホルダです。業種ごとに文言を差し替えられます。",
+        desktopCta: "開く",
+      },
+      {
+        id: "customInsight",
+        enabled: true,
+        path: "/more",
+        icon: "LayoutGrid",
+        title: "連携・カスタム",
+        subtitle: "外部連携と追加ウィジェット（デモ）",
+        desktopTitle: "連携・アラート（拡張枠）",
+        desktopBody:
+          "外部システム・承認キュー・任意 KPI を載せられる想定のスロット。「その他」へのショートカット。",
+        desktopCta: "その他へ",
+      },
+    ] satisfies DashboardExtensionSlotBase[],
   },
 
   /** シェル周り */
@@ -82,24 +132,10 @@ export const appTemplateConfig = {
 
 export type AppTemplateConfig = typeof appTemplateConfig;
 
-/** ダッシュボードグリッド用 Tailwind クラス */
+/** ダッシュボードグリッド用 Tailwindクラス */
 export function dashboardGridClass(columns: 3 | 4): string {
   if (columns === 3) {
     return "grid min-w-0 grid-cols-3 items-stretch gap-1.5 md:gap-4 xl:gap-6";
   }
   return "grid min-w-0 grid-cols-3 md:grid-cols-4 items-stretch gap-1.5 md:gap-4 xl:gap-6";
-}
-
-/** 拡張枠（勤怠・ナレッジ）の列スパン */
-export function dashboardExtensionSpanClass(
-  slot: "attendance" | "knowledge",
-  columns: 3 | 4
-): string {
-  if (columns === 3) {
-    return slot === "attendance" ? "col-span-1" : "col-span-2";
-  }
-  /* 4列: 狭い画面は従来どおり 1+2、md 以上で下段を半々 */
-  return slot === "attendance"
-    ? "col-span-1 md:col-span-2"
-    : "col-span-2 md:col-span-2";
 }

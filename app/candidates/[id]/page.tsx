@@ -6,7 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  TemplatePageHeader,
+  TemplatePageStack,
+} from "@/components/templates/layout-primitives";
 import { getIndustryDemoData } from "@/lib/demo-data-selector";
+import { getIndustryPageHints } from "@/lib/industry-page-hints";
 import { getIndustryProfile } from "@/lib/industry-profiles";
 import {
   getIndustryFromSearchParams,
@@ -26,6 +31,7 @@ export default async function CandidateDetailPage({
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const industry = getIndustryFromSearchParams(resolvedSearchParams);
   const profile = getIndustryProfile(industry);
+  const cd = getIndustryPageHints(industry).candidateDetail;
   const data = getIndustryDemoData(industry);
   const c = data.getCandidateById(id);
   if (!c) notFound();
@@ -38,8 +44,8 @@ export default async function CandidateDetailPage({
     : null;
 
   return (
-    <div className="space-y-6">
-      <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1">
+    <TemplatePageStack>
+      <Button variant="ghost" size="sm" asChild className="-ml-2 gap-1 self-start">
         <Link href={withIndustryQuery("/candidates", industry)}>
           <ArrowLeft className="size-4" />
           {profile.labels.candidate}一覧
@@ -56,9 +62,7 @@ export default async function CandidateDetailPage({
           unoptimized
         />
         <div className="flex-1 space-y-2">
-          <h1 className="text-2xl font-semibold text-primary-alt">
-            {c.displayName}
-          </h1>
+          <TemplatePageHeader title={c.displayName} />
           <p className="text-sm text-muted">
             {c.legalNameFull} / {c.nameKatakana}
           </p>
@@ -68,7 +72,9 @@ export default async function CandidateDetailPage({
               AI {c.aiScore}
             </Badge>
             <Badge>{c.pipelineStatusLabelJa}</Badge>
-            <Badge variant="secondary">{c.jlpt}</Badge>
+            {cd.showJlptBadge ? (
+              <Badge variant="secondary">{c.jlpt}</Badge>
+            ) : null}
           </div>
           {c.aiScoreRationale && (
             <p className="text-sm text-muted">{c.aiScoreRationale}</p>
@@ -77,17 +83,17 @@ export default async function CandidateDetailPage({
       </div>
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="flex w-full flex-wrap h-auto gap-1 p-1">
-          <TabsTrigger value="basic">基本情報</TabsTrigger>
-          <TabsTrigger value="docs">書類</TabsTrigger>
-          <TabsTrigger value="history">派遣履歴・評価</TabsTrigger>
-          <TabsTrigger value="ai">AI 分析</TabsTrigger>
+        <TabsList className="flex h-auto w-full flex-wrap gap-1 p-1">
+          <TabsTrigger value="basic">{cd.tabBasic}</TabsTrigger>
+          <TabsTrigger value="docs">{cd.tabDocs}</TabsTrigger>
+          <TabsTrigger value="history">{cd.tabHistory}</TabsTrigger>
+          <TabsTrigger value="ai">{cd.tabAi}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">プロフィール</CardTitle>
+              <CardTitle className="text-base">{cd.profileCardTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <dl className="grid gap-2 sm:grid-cols-2">
@@ -135,22 +141,21 @@ export default async function CandidateDetailPage({
         <TabsContent value="docs">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">書類・在留</CardTitle>
+              <CardTitle className="text-base">{cd.docsCardTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <p>
-                <span className="text-muted">パスポート</span>{" "}
-                {c.passportNumber} / 有効期限 {c.passportExpiry}
+                <span className="text-muted">{cd.docsPrimaryLabel}</span>{" "}
+                {c.passportNumber} / {cd.docsExpiryLabel} {c.passportExpiry}
               </p>
               <p>
-                <span className="text-muted">COE</span> {c.coeStatusJa}
+                <span className="text-muted">{cd.docsSecondaryLabel}</span>{" "}
+                {c.coeStatusJa}
               </p>
               {c.documentAlertJa && (
-                <p className="text-danger font-medium">{c.documentAlertJa}</p>
+                <p className="font-medium text-danger">{c.documentAlertJa}</p>
               )}
-              <p className="text-muted text-xs">
-                OCR デモ: ダッシュボード右下 FAB からサンプル抽出を表示できます。
-              </p>
+              <p className="text-xs text-muted">{cd.docsOcrNote}</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -158,16 +163,17 @@ export default async function CandidateDetailPage({
         <TabsContent value="history">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">派遣履歴・評価（デモ）</CardTitle>
+              <CardTitle className="text-base">{cd.historyCardTitle}</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-muted">
-              本番では placements テーブルから表示。デモでは未配属または予定のみ表示します。
+              <p>{cd.historyPlaceholder}</p>
               {c.plannedAssignment && assigned && (
                 <div className="mt-4 rounded-lg border border-border bg-surface p-4 text-foreground">
                   <p className="font-medium">{assigned.tradeNameJa}</p>
                   <p>{c.plannedAssignment.jobTitleJa}</p>
                   <p className="text-muted">
-                    月給 {c.plannedAssignment.monthlySalaryJpy.toLocaleString()} 円（想定）
+                    {cd.plannedAssignmentSalaryLabel}{" "}
+                    {c.plannedAssignment.monthlySalaryJpy.toLocaleString()} 円（想定）
                   </p>
                 </div>
               )}
@@ -178,14 +184,14 @@ export default async function CandidateDetailPage({
         <TabsContent value="ai">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">AI マッチング示唆</CardTitle>
+              <CardTitle className="text-base">{cd.aiCardTitle}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               {assigned && match ? (
                 <>
                   <p>
-                    <span className="font-semibold">{assigned.tradeNameJa}</span> との適合
-                    目安:{" "}
+                    <span className="font-semibold">{assigned.tradeNameJa}</span>{" "}
+                    との適合目安:{" "}
                     <span className="text-lg font-bold text-primary">
                       {match.pct}%
                     </span>
@@ -193,17 +199,20 @@ export default async function CandidateDetailPage({
                   <p className="leading-relaxed text-muted">{match.reason}</p>
                 </>
               ) : (
-                <p className="text-muted">
-                  配属予定クライアントが未設定のため、マッチング画面で案件別の提案をご覧ください。
-                </p>
+                <div className="space-y-2">
+                  <p className="text-muted">{cd.aiEmptyAssignment}</p>
+                  <Button variant="link" className="h-auto p-0 text-primary" asChild>
+                    <Link href={withIndustryQuery("/matching", industry)}>
+                      {cd.aiMatchingLinkLabel}
+                    </Link>
+                  </Button>
+                </div>
               )}
-              <p className="text-xs text-muted">
-                    動画レジュメ解析・離職リスクは本番 AI 連携で拡張予定（デモは静的テキスト）。
-              </p>
+              <p className="text-xs text-muted">{cd.aiFooterNote}</p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </TemplatePageStack>
   );
 }

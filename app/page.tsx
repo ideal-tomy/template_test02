@@ -3,22 +3,17 @@ import {
   ArrowRight,
   Building2,
   ClipboardList,
-  Clock,
   FileText,
   GitBranch,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DashboardCandidateCard } from "@/components/dashboard-candidate-card";
 import { DashboardMobileCardSlim } from "@/components/dashboard-mobile-card-slim";
+import { DashboardExtensionRegion } from "@/components/dashboard-extension-region";
 import { TemplateDashboardHeader } from "@/components/templates/layout-primitives";
-import {
-  dashboardExtensionSpanClass,
-  dashboardGridClass,
-  appTemplateConfig,
-} from "@/lib/app-template-config";
+import { dashboardGridClass, appTemplateConfig } from "@/lib/app-template-config";
 import { getIndustryPageHints } from "@/lib/industry-page-hints";
 import { getIndustryProfile } from "@/lib/industry-profiles";
 import {
@@ -299,72 +294,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        {dashboard.extensionCards.attendanceBilling ? (
-          <div
-            className={`${dashboardExtensionSpanClass("attendance", gridCols)} flex h-full min-h-0 min-w-0 flex-col`}
-          >
-            <DashboardMobileCardSlim
-            href={withIndustryQuery("/operations", industry)}
-              icon={Clock}
-              title="勤怠・請求"
-              subtitle="勤怠情報から経費計算連携"
-            />
-            <Link
-              href={withIndustryQuery("/operations", industry)}
-              className="group hidden min-h-0 w-full flex-1 flex-col md:flex"
-            >
-              <Card className="flex h-full min-h-0 flex-1 flex-col border-dashed transition-all group-hover:border-primary/40 group-hover:shadow-md">
-                <CardHeader className="shrink-0 p-5 pb-2">
-                  <CardTitle className="text-base font-semibold">
-                    勤怠・請求（拡張枠）
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex min-h-0 flex-1 flex-col p-5 pt-0 text-sm text-muted">
-                  <p className="min-h-0 flex-1 leading-snug">
-                    CSV 取込イメージ。今回はプレースホルダ — 実務・収益ハブへ
-                  </p>
-                  <span className="mt-auto inline-flex shrink-0 items-center gap-1 pt-1 font-medium text-primary">
-                    開く <ArrowRight className="size-4" />
-                  </span>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
-        ) : null}
-
-        {dashboard.extensionCards.knowledgeAi ? (
-          <div
-            className={`${dashboardExtensionSpanClass("knowledge", gridCols)} flex h-full min-h-0 min-w-0 flex-col`}
-          >
-            <DashboardMobileCardSlim
-            href={withIndustryQuery("/knowledge", industry)}
-              icon={Sparkles}
-              title="社内ナレッジ"
-              subtitle="社内情報管理と共有"
-            />
-            <Link
-              href={withIndustryQuery("/knowledge", industry)}
-              className="group hidden min-h-0 w-full flex-1 flex-col md:flex"
-            >
-              <Card className="flex h-full min-h-0 flex-1 flex-col border-dashed transition-all group-hover:border-primary/40 group-hover:shadow-md">
-                <CardHeader className="shrink-0 p-5 pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                    <Sparkles className="size-5 shrink-0 text-primary" />
-                    社内ナレッジ AI（拡張枠）
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex min-h-0 flex-1 flex-col p-5 pt-0 text-sm text-muted">
-                  <p className="min-h-0 flex-1 leading-snug">
-                    入管トラブル FAQ をチャットで — デモでは概要のみ表示
-                  </p>
-                  <span className="mt-auto inline-flex shrink-0 items-center gap-1 pt-1 font-medium text-primary">
-                    ナレッジへ <ArrowRight className="size-4" />
-                  </span>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
-        ) : null}
+        <DashboardExtensionRegion industry={industry} />
       </div>
     </div>
   );
